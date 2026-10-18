@@ -25,11 +25,19 @@ const STYLE_ID = 'dsh-clinebot-full-css'
 const EXPECTED_SLOTS = [
   'settings.section',
   'sidebar.footer.action',
-  'main',
-  'settings.models.provider-card',
   'conversation.composer.dock',
 ]
-const RETIRED_SLOTS = ['plugins.item', 'plugins.row.config', 'settings.plugin.item']
+const RETIRED_SLOTS = [
+  'plugins.item',
+  'plugins.row.config',
+  'settings.plugin.item',
+  // Dispatched on every provider row regardless of whether it is open, with no
+  // open state in its props, so anything here reads as an editor that opened itself.
+  'settings.models.provider-card',
+  // The quota read-out is a window opened from the meter; taking the centre
+  // column for it threw the conversation out of the way.
+  'main',
+]
 
 /** React stand-in: the factory only needs the module to exist at load time. */
 const reactStub = {
@@ -113,13 +121,14 @@ test('the stylesheet is in the document as soon as apply returns', () => {
   assert.match(styles[0].textContent, /\.cb-foot\{/)
 })
 
-test('the stylesheet carries the DSH design tokens and no host override', () => {
+test('the stylesheet carries the DSH design tokens', () => {
   const css = activate().styles[0].textContent
   for (const token of ['--dsw-alias-settings-card-stroke', '--dsw-alias-settings-card-fill', '--dsw-radius-xl', '--dsw-radius-md']) {
     assert.ok(css.includes(token), `stylesheet should use ${token}`)
   }
+  // The host's footer *container* is off limits; the action list is the one
+  // exception and it is scoped (see the stacking test below).
   assert.ok(!/class\*="_footArea"/.test(css), 'must not reach into the host sidebar footer container')
-  assert.ok(!/class\*="_footerActions"/.test(css), 'must not reach into the host sidebar footer container')
 })
 
 test('the configuration page is a settings section, not a Plugins-page seat', () => {
@@ -149,33 +158,46 @@ test('settings.section is registered with the id, order and localized label the 
   assert.equal(typeof sections[0].render, 'function')
 })
 
-test('the models provider card is keyed by provider settings namespace, not by route id', () => {
-  const { injected, registrations } = activate()
-  settle(injected)
+test('the footer action list is stacked, but only where this meter is in it', () => {
+  const css = activate().styles[0].textContent
 
-  const keys = registrations
-    .filter((entry) => entry.options.name === 'settings.models.provider-card')
-    .map((entry) => entry.options.key)
+  // The shell renders the list as a row, which a full-width meter cannot share
+  // with another plugin's entry — so the list is stacked while the meter is there.
+  assert.match(css, /\[class\*="_footerActions"\]:has\(\.cb-foot\)/)
+  assert.match(css, /\[class\*="_footerActions"\]:has\(\.cb-railButton\)/)
 
-  // The seat is dispatched with `entryKey = <provider settingsNs>`, i.e. the loader
-  // entry id of the plugin declaring the provider. `llm-pi-ai` is the shared entry
-  // this deployment declares `clinebot` in; without it the card never rendered.
-  assert.deepEqual(keys, ['clinebot', 'llm-clinebot', 'llm-pi-ai'])
+  // Scoping matters: a bare descendant selector would reach into every plugin's
+  // footer, which is what this rule used to do.
+  for (const rule of css.match(/[^\n{]*_footerActions[^\n{]*\{/g) || []) {
+    assert.ok(rule.includes(':has('), `unscoped host override: ${rule.trim()}`)
+  }
 })
 
-test('the sidebar meter and dashboard renderers are registered on their seats', () => {
+test('the sidebar meter and composer dock renderers are registered on their seats', () => {
   const { injected, registrations } = activate()
   settle(injected)
 
   const byName = (name) => registrations.filter((entry) => entry.options.name === name)
   assert.equal(byName('sidebar.footer.action').length, 1)
   assert.equal(byName('sidebar.footer.action')[0].options.id, 'clinebot-quota')
-  assert.equal(byName('main').length, 1)
-  assert.equal(byName('main')[0].options.key, 'clinebot-dashboard')
   assert.equal(byName('conversation.composer.dock').length, 1)
   for (const entry of registrations) {
     assert.equal(typeof entry.render, 'function', `${entry.options.name} needs a renderer`)
   }
+})
+
+test('the quota read-out is a window, not a panel', () => {
+  const source = fs.readFileSync(path.join(root, 'src/client/components/sidebar-quota.js'), 'utf8')
+  const dialog = fs.readFileSync(path.join(root, 'src/client/components/dashboard-dialog.js'), 'utf8')
+
+  // The meter opens a dialog and never navigates the centre column.
+  assert.match(source, /DashboardDialog/)
+  assert.ok(!/selectPanel/.test(source), 'the meter must not select a panel')
+
+  // And the dialog is the shell's own window when the primitive is there.
+  assert.match(dialog, /if \(Modal\)/)
+  assert.match(dialog, /React\.createElement\(Modal, \{/)
+  assert.ok(!/cb-mainOverlay/.test(dialog), 'the old full-bleed panel is gone')
 })
 
 test('the plugin declares the services its client half reads', () => {

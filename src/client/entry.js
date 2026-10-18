@@ -109,39 +109,18 @@ function apply(ctx) {
     )
   )
 
-  // Central Overlay Dashboard (main slot)
-  registerSlotWhenReady('main', () =>
-    ctx.slots.register(
-      {
-        name: 'main',
-        key: 'clinebot-dashboard',
-        locale: NS,
-        inject: () => ({ ctx }),
-      },
-      (props) => React.createElement(ErrorBoundary, { t: props && props.t }, React.createElement(DashboardOverlay, { ...props, ctx: (props && props.ctx) || ctx }))
-    )
-  )
+  // The quota & status read-out is a window opened from the sidebar meter, not a
+  // `main`-slot panel: occupying the centre column meant clicking the meter threw
+  // the conversation out of the way to show a status read-out.
 
-  // Settings Models Provider Card (settings.models.provider-card slot).
-  // This seat is KEYED and dispatched with `entryKey = <provider settingsNs>` —
-  // the loader entry id of the plugin that declares the provider
-  // (`ctx.fiber.entry.options.id`), NOT the provider route id. The provider can
-  // live in a dedicated entry (`llm-clinebot`) or inside a shared provider plugin
-  // (`llm-pi-ai`, which is how the `clinebot` provider is declared in practice),
-  // so every spelling is registered: the keys the page never dispatches are inert.
-  for (const pKey of ['clinebot', 'llm-clinebot', 'llm-pi-ai']) {
-    registerSlotWhenReady('settings.models.provider-card', () =>
-      ctx.slots.register(
-        {
-          name: 'settings.models.provider-card',
-          key: pKey,
-          locale: NS,
-          inject: () => ({ ctx }),
-        },
-        (props) => React.createElement(ErrorBoundary, { t: props && props.t }, React.createElement(ModelsProviderCard, { ...props, ctx: (props && props.ctx) || ctx }))
-      )
-    )
-  }
+  // `settings.models.provider-card` is deliberately not registered. The seat is
+  // KEYED and dispatched with `entryKey = <provider settingsNs>` on every provider
+  // row, unconditionally: the models page renders it before the row's own
+  // `open ? editor : null`, and its owner props carry no open state. Anything
+  // registered there therefore shows on the collapsed row and reads as an editor
+  // that opened by itself. The row's 编辑 affordance already opens a provider
+  // editor with the same API-key field, and this plugin's configuration lives in
+  // its own Settings section, so the seat is left free.
 
   // Composer Session Cost Dock (conversation.composer.dock slot)
   registerSlotWhenReady('conversation.composer.dock', () =>

@@ -13,6 +13,9 @@ try {
 /** Native toggle for boolean preferences; falls back to a checkbox. */
 const Switch = (primitives && primitives.Switch) || null
 
+/** Native dialog window; the plugin draws a plainer one when it is absent. */
+const Modal = (primitives && primitives.Modal) || null
+
 /**
  * Boolean preference control: the native Switch when the shell provides it, the
  * plugin's own checkbox otherwise. Both take the same `checked`/`disabled`/`onChange`.

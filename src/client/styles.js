@@ -64,7 +64,13 @@ function ensureCss() {
 .cb-stat-lbl{color:var(--dsw-alias-label-secondary);font-size:12px;line-height:18px}
 .cb-preview{padding:10px 12px;border:.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);font-family:var(--ds-font-family-code,monospace);font-size:12px;line-height:18px;white-space:pre-wrap;word-break:break-all}
 
-.cb-foot{box-sizing:border-box;flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:6px;margin:0 0 4px;padding:8px;border:.5px solid transparent;border-radius:var(--dsw-radius-md);background:transparent;color:var(--dsw-alias-label-secondary);font:inherit;text-align:left;cursor:pointer}
+/* The shell lays the footer action list out as a row, which a full-width meter
+   cannot share: with another plugin's entry beside it the plan name truncates and
+   the window label wraps. Stack the list while this meter is in it. The :has()
+   scoping keeps the rule off any footer that does not contain this plugin, so it
+   cannot reach across other registrants the way a plain descendant selector would. */
+[class*="_footerActions"]:has(.cb-foot), [class*="_footerActions"]:has(.cb-railButton){flex-direction:column}
+.cb-foot{box-sizing:border-box;flex:1 1 auto;width:100%;min-width:0;display:flex;flex-direction:column;gap:6px;margin:0 0 4px;padding:8px;border:.5px solid transparent;border-radius:var(--dsw-radius-md);background:transparent;color:var(--dsw-alias-label-secondary);font:inherit;text-align:left;cursor:pointer}
 .cb-foot:hover{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-border-l3)}
 .cb-foot:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:-2px}
 .cb-footTop{display:flex;align-items:center;gap:8px;min-width:0}
@@ -82,14 +88,14 @@ function ensureCss() {
 .cb-railButton:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:-2px}
 .cb-glyph{flex:none;display:inline-flex;justify-content:center;align-items:center;color:var(--dsw-alias-brand-primary)}
 
-.cb-mainOverlay{display:block;width:100%;height:100%;overflow:auto;background:var(--dsw-alias-bg-layer-1)}
-.cb-mainInner{display:flex;flex-direction:column;gap:14px;max-width:760px;margin:0 auto;padding:24px 20px 40px;color:var(--dsw-alias-label-primary)}
-.cb-mainHeader{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding-bottom:14px;border-bottom:.5px solid var(--dsw-alias-border-l2)}
-.cb-mainTitle{margin:0;font-size:16px;font-weight:600;line-height:24px}
-.cb-mainSub{margin:0;color:var(--dsw-alias-label-secondary);font-size:12px;line-height:18px}
-.cb-mainCard{display:flex;flex-direction:column;gap:12px;padding:12px 14px;border:.5px solid var(--dsw-alias-settings-card-stroke);border-radius:var(--dsw-radius-xl);background:var(--dsw-alias-settings-card-fill)}
+/* The window chrome and its width belong to the shell's Modal, so the body only
+   fills whatever it is given — a fixed width here overflows the panel. */
+.cb-dialog{display:flex;flex-direction:column;gap:12px;width:100%;min-width:0;max-height:min(72vh, 640px);overflow-y:auto;color:var(--dsw-alias-label-primary)}
+.cb-dialogMeta{display:flex;align-items:center;gap:8px;color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:18px;font-variant-numeric:tabular-nums}
+.cb-dialogCard{display:flex;flex-direction:column;gap:12px;padding:12px 14px;border:.5px solid var(--dsw-alias-settings-card-stroke);border-radius:var(--dsw-radius-xl);background:var(--dsw-alias-settings-card-fill)}
+.cb-dialogFallback{position:fixed;inset:0;z-index:900;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--dsw-alias-bg-mask-1)}
+.cb-dialogFallbackPanel{display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - 96px);overflow-y:auto;padding:18px;border-radius:var(--dsw-radius-panel);background:var(--dsw-alias-bg-layer-2);box-shadow:var(--dsw-elevation-prominent)}
 
-.cb-providerCard{display:flex;flex-direction:column;gap:12px;margin:8px 0;padding:12px 14px;border:.5px solid var(--dsw-alias-settings-card-stroke);border-radius:var(--dsw-radius-xl);background:var(--dsw-alias-settings-card-fill)}
 `
       document.head.appendChild(style)
     }
